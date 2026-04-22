@@ -1,0 +1,62 @@
+name: Build with Fil-C
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: read-all
+
+jobs:
+  build-with-fil-c:
+    name: "Build (Fil-C, Linux x86-64)"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Platform setup"
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+            python3 python3-pip \
+            pkgconf meson ninja-build \
+            curl jq xz-utils
+
+      - name: Checkout BoxFort
+        uses: actions/checkout@v5
+
+      - name: Install Fil-C
+        run: |
+          release_json="$(curl --fail --silent --show-error \
+            https://api.github.com/repos/pizlonator/fil-c/releases/latest)"
+          asset_url="$(printf '%s' "$release_json" | jq -r '
+            .assets[]
+            | select(.name | test("^optfil-.*-linux-x86_64\\.tar\\.xz$"))
+            | .browser_download_url
+          ' | head -n1)"
+
+          if [ -z "$asset_url" ] || [ "$asset_url" = "null" ]; then
+            echo "Unable to find a Linux x86_64 /opt/fil asset in the latest release." >&2
+            exit 1
+          fi
+
+          mkdir -p .filc
+          curl --fail --location --silent --show-error "$asset_url" --output .filc/optfil.tar.xz
+          tar -xJf .filc/optfil.tar.xz -C .filc --strip-components=1
+          (
+            cd .filc
+            printf 'YES\n' | sudo ./setup.sh
+          )
+
+      - name: Configure (Meson)
+        env:
+          CC: /opt/fil/bin/filcc
+        run: |
+          meson setup build-filc
+
+      - name: Build
+        run: |
+          meson compile -C build-filc
