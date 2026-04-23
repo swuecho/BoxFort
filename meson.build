@@ -8,6 +8,7 @@ project('boxfort', 'c',
 prefix    = get_option('prefix')
 samples   = get_option('samples')
 tests     = get_option('tests')
+filc      = get_option('filc')
 
 # Helper scripts
 auxdir  = join_paths(meson.current_source_dir(), 'ci')
@@ -45,6 +46,10 @@ add_project_arguments(
 	'-DBXF_BUILDING_LIB',
 	'-D_GNU_SOURCE',
 	language: ['c', 'cpp'])
+
+if filc
+	add_project_arguments('-DBXF_FILC=1', language: ['c', 'cpp'])
+endif
 
 if host_machine.system() == 'windows'
 	add_project_arguments(
@@ -207,6 +212,14 @@ foreach check : checks
 	endif
 	config.set(name, result)
 endforeach
+
+# Fil-C prefixes external symbols ("pizlonation") and does not support building
+# our hand-written trampolines. For Fil-C builds, force the portable code paths
+# that avoid direct references to loader-internal globals like _r_debug/_DYNAMIC.
+if filc
+	config.set('HAVE__R_DEBUG', false)
+	config.set('HAVE__DYNAMIC', false)
+endif
 
 api = files('include/boxfort.h')
 

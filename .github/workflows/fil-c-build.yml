@@ -55,7 +55,7 @@ jobs:
         env:
           CC: /opt/fil/bin/filcc
         run: |
-          meson setup build-filc
+          meson setup build-filc -Dfilc=true
 
       - name: Build
         run: |

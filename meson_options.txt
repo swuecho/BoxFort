@@ -2,3 +2,4 @@ option('arena_reopen_shm', type: 'boolean', value: false, description: 'Reopen s
 option('arena_file_backed', type: 'boolean', value: false, description: 'Use a file in tempfs to store the arena rather than using shm facilities')
 option('samples', type: 'boolean', value: true, description: 'Build samples')
 option('tests', type: 'boolean', value: true, description: 'Build and run tests')
+option('filc', type: 'boolean', value: false, description: 'Build with Fil-C compatibility (no hand-written assembly; adds shims for prefixed symbols)')
