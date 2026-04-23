@@ -150,9 +150,15 @@ static bxfi_exe_ctx init_exe_ctx(void)
 
 extern int main();
 
+#if !defined(BXF_FILC)
 extern void *bxfi_trampoline;
 extern void *bxfi_trampoline_addr;
 extern void *bxfi_trampoline_end;
+#else
+void *bxfi_trampoline_filc_begin(void);
+void *bxfi_trampoline_filc_addr(void);
+void *bxfi_trampoline_filc_end(void);
+#endif
 
 int bxfi_exe_patch_main(bxfi_exe_fn *new_main)
 {
@@ -161,9 +167,18 @@ int bxfi_exe_patch_main(bxfi_exe_fn *new_main)
     if (!addr)
         return -1;
 
-    void *trampoline = &bxfi_trampoline;
-    void *trampoline_end = &bxfi_trampoline_end;
-    void *trampoline_addr = &bxfi_trampoline_addr;
+    void *trampoline;
+    void *trampoline_end;
+    void *trampoline_addr;
+#if !defined(BXF_FILC)
+    trampoline = &bxfi_trampoline;
+    trampoline_end = &bxfi_trampoline_end;
+    trampoline_addr = &bxfi_trampoline_addr;
+#else
+    trampoline = bxfi_trampoline_filc_begin();
+    trampoline_end = bxfi_trampoline_filc_end();
+    trampoline_addr = bxfi_trampoline_filc_addr();
+#endif
     bxfi_exe_trampoline_fixup(&addr, &trampoline, &trampoline_end, &trampoline_addr);
 
     /* Reserve enough space for the trampoline and copy the default opcodes */

@@ -25,7 +25,14 @@ if cc.get_id() == 'msvc'
 	asm_extension = '.asm'
 endif
 
+filc = get_option('filc')
+
 asm = files('asm/trampoline-@0@@1@'.format(arch, asm_extension))
+if filc
+	# Fil-C cannot assemble our handwritten trampolines; use C-only blobs instead.
+	asm = []
+	sources += files('trampoline-filc.c', 'filc-shims.c')
+endif
 
 if cc.get_id() == 'msvc'
 	if bitness == 32
